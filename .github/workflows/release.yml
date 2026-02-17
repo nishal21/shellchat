@@ -19,26 +19,22 @@ jobs:
         run: go install github.com/fyne-io/fyne-cross@latest
 
       - name: Build Windows
-        run: fyne-cross windows -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-windows .
-        working-directory: ./gui
+        run: fyne-cross windows -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-windows ./gui
 
       - name: Build Linux
-        run: fyne-cross linux -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-linux .
-        working-directory: ./gui
+        run: fyne-cross linux -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-linux ./gui
 
       - name: Build macOS (Intel)
-        run: fyne-cross darwin -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-macos-amd64 .
-        working-directory: ./gui
+        run: fyne-cross darwin -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-macos-amd64 ./gui
         
       - name: Build macOS (Apple Silicon)
-        run: fyne-cross darwin -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-macos-arm64 .
-        working-directory: ./gui
+        run: fyne-cross darwin -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-macos-arm64 ./gui
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-builds
-          path: gui/fyne-cross/dist/*
+          path: fyne-cross/dist/*
 
   build-mobile:
     runs-on: ubuntu-latest
@@ -52,18 +48,16 @@ jobs:
         run: go install github.com/fyne-io/fyne-cross@latest
 
       - name: Build Android
-        run: fyne-cross android -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-android .
-        working-directory: ./gui
+        run: fyne-cross android -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-android ./gui
 
       - name: Build iOS
-        run: fyne-cross ios -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-ios .
-        working-directory: ./gui
+        run: fyne-cross ios -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-ios ./gui
 
       - name: Upload Mobile Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mobile-builds
-          path: gui/fyne-cross/dist/*
+          path: fyne-cross/dist/*
 
   release:
     needs: [build-desktop, build-mobile]
