@@ -49,7 +49,7 @@ jobs:
           go-version: '1.22'
 
       - name: Install fyne-cross
-        run: go install github.com/fyne-io/fyne-cross/v2/cmd/fyne-cross@latest
+        run: go install github.com/fyne-io/fyne-cross/cmd/fyne-cross@latest
 
       - name: Build Android
         run: fyne-cross android -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-android .
