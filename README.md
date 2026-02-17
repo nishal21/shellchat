@@ -9,7 +9,7 @@
 > *Encryption. Anonymity. Aesthetics.*
 
 <p align="center">
-  <img src="assets/logo_text.png" width="200" alt="ShellChat Logo">
+  <img src="assets/icon.png" width="200" alt="ShellChat Logo">
 </p>
 
 ## 🌟 Introduction
@@ -44,13 +44,13 @@ How does ShellChat connect you without a server?
 
 ```mermaid
 graph TD
-    A[User A (You)] <-->|Encrypted Stream (Noise)| B[User B (Peer)]
-    A -.->|DHT Lookup| D((Global DHT))
-    B -.->|DHT Announce| D
+    A["User A (You)"] <-->|"Encrypted Stream (Noise)"| B["User B (Peer)"]
+    A -.->|"DHT Lookup"| D(("Global DHT"))
+    B -.->|"DHT Announce"| D
     
     subgraph "Your Device"
         UI[Retro UI]
-        DB[(Encrypted DB (SQLCipher))]
+        DB[("Encrypted DB (SQLCipher)")]
         Keys[Argon2 Keys]
     end
 ```
