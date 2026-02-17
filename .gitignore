@@ -1,0 +1,26 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Logs
+*.log
+build_log.txt
+
+# Database
+shellchat.db
+*.db-shm
+*.db-wal
+
+# Temporary Files
+tmp/
+fyne-cross/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
