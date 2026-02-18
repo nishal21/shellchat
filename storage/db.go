@@ -7,18 +7,15 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "github.com/xeodou/go-sqlcipher"
+	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
 
-// InitDB initializes the encrypted SQLite database with the given password.
-// The password is used to derive the encryption key.
+// InitDB initializes the SQLite database.
+// NOTE: Encryption is currently DISABLED for cross-platform compatibility.
+// The password argument is ignored in this version.
 func InitDB(password string) error {
-	if password == "" {
-		return fmt.Errorf("password cannot be empty")
-	}
-
 	// Determine the database path
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -32,21 +29,18 @@ func InitDB(password string) error {
 
 	dbPath := filepath.Join(appDir, "shellchat.db")
 
-	// Open the database with the encryption key pragma
-	// Syntax for sqlcipher usually involves passing PRAGMAs or options in DSN
-	// For go-sqlcipher, key is usually passed via PRAGMA key after open, or via DSN parameters if supported.
-	// xeodou/go-sqlcipher supports standard database/sql.
+	// Open the database using modernc.org/sqlite (pure Go)
+	// Build DSN
+	dsn := dbPath
 
-	dsn := fmt.Sprintf("%s?_pragma_key=%s&_pragma_cipher_page_size=4096", dbPath, password)
-
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
 	// Verify connection
 	if err := db.Ping(); err != nil {
-		return fmt.Errorf("failed to ping database (possibly wrong password): %w", err)
+		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	// Enable WAL mode for better concurrency
