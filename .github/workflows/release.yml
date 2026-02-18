@@ -73,29 +73,8 @@ jobs:
           name: android-builds
           path: fyne-cross/dist/*
 
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-
-      - name: Install Fyne CLI
-        run: go install fyne.io/tools/cmd/fyne@latest
-
-      - name: Build iOS (Simulator)
-        # We build for Simulator to avoid mandatory code signing requirements in CI
-        run: fyne package --os iossimulator --app-id com.shellchat.app --icon assets/icon.png --name ShellChat ./gui
-
-      - name: Upload iOS Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-builds
-          path: "*.app"
-
   release:
-    needs: [build-desktop, build-macos, build-android, build-ios]
+    needs: [build-desktop, build-macos, build-android]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -110,4 +89,3 @@ jobs:
             desktop-builds/**/*
             macos-builds/**/*
             android-builds/**/*
-            ios-builds/**/*
