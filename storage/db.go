@@ -13,9 +13,11 @@ import (
 var DB *sql.DB
 
 // InitDB initializes the SQLite database.
-// NOTE: Encryption is currently DISABLED for cross-platform compatibility.
-// The password argument is ignored in this version.
 func InitDB(password string) error {
+	if password == "" {
+		return fmt.Errorf("password cannot be empty")
+	}
+
 	// Determine the database path
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -30,7 +32,6 @@ func InitDB(password string) error {
 	dbPath := filepath.Join(appDir, "shellchat.db")
 
 	// Open the database using modernc.org/sqlite (pure Go)
-	// Build DSN
 	dsn := dbPath
 
 	db, err := sql.Open("sqlite", dsn)
@@ -50,11 +51,47 @@ func InitDB(password string) error {
 
 	DB = db
 
-	// Initialize Schema
+	// Initialize Schema (messages table)
 	if err := createSchema(context.Background()); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
+	// Initialize Encryption (Salt & Key Derivation)
+	if err := initEncryption(password); err != nil {
+		return fmt.Errorf("failed to initialize encryption: %w", err)
+	}
+
+	return nil
+}
+
+// initEncryption handles the salt and key derivation
+func initEncryption(password string) error {
+	// Create metadata table if not exists (for salt)
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value BLOB)`)
+	if err != nil {
+		return fmt.Errorf("failed to create metadata table: %w", err)
+	}
+
+	// Check if salt exists
+	var salt []byte
+	err = DB.QueryRow("SELECT value FROM metadata WHERE key = 'salt'").Scan(&salt)
+	if err == sql.ErrNoRows {
+		// New database: Generate new salt
+		salt, err = GenerateSalt()
+		if err != nil {
+			return fmt.Errorf("failed to generate salt: %w", err)
+		}
+		// Store salt
+		_, err = DB.Exec("INSERT INTO metadata (key, value) VALUES ('salt', ?)", salt)
+		if err != nil {
+			return fmt.Errorf("failed to store salt: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to query salt: %w", err)
+	}
+
+	// Derive session key
+	SessionKey = DeriveKey(password, salt)
 	return nil
 }
 

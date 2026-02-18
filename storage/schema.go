@@ -5,8 +5,10 @@ import (
 	"fmt"
 )
 
+// createSchema creates the necessary database tables.
 func createSchema(ctx context.Context) error {
-	schema := `
+	// Create messages table
+	query := `
 	CREATE TABLE IF NOT EXISTS messages (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		peer_id TEXT NOT NULL,
@@ -14,13 +16,22 @@ func createSchema(ctx context.Context) error {
 		timestamp INTEGER NOT NULL,
 		is_sent BOOLEAN NOT NULL
 	);
-	
-	CREATE INDEX IF NOT EXISTS idx_messages_peer_timestamp ON messages(peer_id, timestamp DESC);
+	CREATE INDEX IF NOT EXISTS idx_messages_peer_id ON messages(peer_id);
+	CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 	`
+	if _, err := DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to create messages table: %w", err)
+	}
 
-	_, err := DB.ExecContext(ctx, schema)
-	if err != nil {
-		return fmt.Errorf("failed to execute schema: %w", err)
+	// Create metadata table (for encryption salt)
+	metaQuery := `
+	CREATE TABLE IF NOT EXISTS metadata (
+		key TEXT PRIMARY KEY,
+		value BLOB
+	);
+	`
+	if _, err := DB.ExecContext(ctx, metaQuery); err != nil {
+		return fmt.Errorf("failed to create metadata table: %w", err)
 	}
 
 	return nil
