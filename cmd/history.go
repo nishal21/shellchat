@@ -31,7 +31,13 @@ var clearHistoryCmd = &cobra.Command{
 		hexKey := fmt.Sprintf("x'%x'", key)
 
 		// Open DB
-		if err := storage.InitDB(hexKey); err != nil {
+		userConfigDir, err := os.UserConfigDir()
+		if err != nil {
+			fmt.Println("Error finding config directory:", err)
+			return
+		}
+
+		if err := storage.InitDB(userConfigDir, hexKey); err != nil {
 			fmt.Println("Failed to open database (wrong password?):", err)
 			return
 		}
@@ -64,7 +70,7 @@ var obliterateCmd = &cobra.Command{
 			fmt.Println("Error finding config directory:", err)
 			return
 		}
-		
+
 		dbPath := filepath.Join(configDir, "shellchat", "shellchat.db")
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 			fmt.Println("Database file does not exist.")
