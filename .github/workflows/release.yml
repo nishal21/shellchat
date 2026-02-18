@@ -42,10 +42,10 @@ jobs:
         run: go install fyne.io/tools/cmd/fyne@latest
 
       - name: Build macOS (Intel)
-        run: GOARCH=amd64 fyne package -os darwin -appID com.shellchat.app -icon assets/icon.png -name ShellChat-Intel ./gui
+        run: GOARCH=amd64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Intel ./gui
 
       - name: Build macOS (Apple Silicon)
-        run: GOARCH=arm64 fyne package -os darwin -appID com.shellchat.app -icon assets/icon.png -name ShellChat-Silicon ./gui
+        run: GOARCH=arm64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Silicon ./gui
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
@@ -86,7 +86,7 @@ jobs:
 
       - name: Build iOS (Simulator)
         # We build for Simulator to avoid mandatory code signing requirements in CI
-        run: fyne package -os iossimulator -appID com.shellchat.app -icon assets/icon.png -name ShellChat ./gui
+        run: fyne package --os iossimulator --app-id com.shellchat.app --icon assets/icon.png --name ShellChat ./gui
 
       - name: Upload iOS Artifacts
         uses: actions/upload-artifact@v4
