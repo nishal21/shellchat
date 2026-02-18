@@ -42,16 +42,20 @@ jobs:
         run: go install fyne.io/tools/cmd/fyne@latest
 
       - name: Build macOS (Intel)
-        run: GOARCH=amd64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Intel ./gui
+        run: |
+          GOARCH=amd64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Intel ./gui
+          tar czf ShellChat-macOS-Intel.tar.gz ShellChat-Intel.app
 
       - name: Build macOS (Apple Silicon)
-        run: GOARCH=arm64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Silicon ./gui
+        run: |
+          GOARCH=arm64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Silicon ./gui
+          tar czf ShellChat-macOS-AppleSilicon.tar.gz ShellChat-Silicon.app
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-builds
-          path: "*.app"
+          path: "*.tar.gz"
 
   build-android:
     runs-on: ubuntu-latest
