@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -120,13 +121,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tea.KeyEnter:
 			if m.state == stateAuth {
+
 				// Unlock DB
 				password := m.passwordIn.Value()
 				salt := []byte("shellchat-static-salt")
 				key := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
 				hexKey := fmt.Sprintf("x'%x'", key)
 
-				if err := storage.InitDB(hexKey); err != nil {
+				userConfigDir, err := os.UserConfigDir()
+				if err != nil {
+					m.err = err
+					m.viewport.SetContent(fmt.Sprintf("Error getting config dir: %v", err))
+					return m, nil
+				}
+
+				if err := storage.InitDB(userConfigDir, hexKey); err != nil {
 					m.err = err
 					m.viewport.SetContent(fmt.Sprintf("Error: %v\nTry again.", err))
 					m.passwordIn.SetValue("")
