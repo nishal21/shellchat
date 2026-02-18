@@ -220,21 +220,16 @@ COMMANDS
 					return m, nil
 				}
 
-				// Command: /connect <multiaddr>
+				// Command: /connect <multiaddr> OR <peerID>
 				if strings.HasPrefix(content, "/connect ") {
 					addrStr := strings.TrimPrefix(content, "/connect ")
 					m.viewport.SetContent(fmt.Sprintf("Connecting to %s...", addrStr))
 
-					// Parse multiaddr
+					// 1. Try valid Multiaddr
 					ma, err := multiaddr.NewMultiaddr(addrStr)
-					if err != nil {
-						m.viewport.SetContent(fmt.Sprintf("Invalid address: %v", err))
-					} else {
-						// Extract Peer Info
+					if err == nil {
 						pi, err := peer.AddrInfoFromP2pAddr(ma)
-						if err != nil {
-							m.viewport.SetContent(fmt.Sprintf("Invalid peer info: %v", err))
-						} else {
+						if err == nil {
 							// Connect in background
 							go func() {
 								ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -245,11 +240,38 @@ COMMANDS
 							}()
 							m.addPeer(pi.ID.String())
 							m.activePeer = pi.ID.String()
-							// Reload history
 							m.messages, _ = storage.GetMessages(m.activePeer, 50)
 							m.updateView()
+							m.messageIn.SetValue("")
+							return m, nil
 						}
 					}
+
+					// 2. Try Peer ID (DHT Lookup)
+					pid, err := peer.Decode(addrStr)
+					if err == nil {
+						m.viewport.SetContent(fmt.Sprintf("Looking up Peer ID %s in DHT...", pid.ShortString()))
+						go func() {
+							ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+							defer cancel()
+							pi, err := m.host.DHT.FindPeer(ctx, pid)
+							if err != nil {
+								// Send error to UI (not implemented in this simplified model, but at least we try)
+								return
+							}
+							if err := m.host.P2PHost.Connect(ctx, pi); err == nil {
+								// Connection success, UI will update on next interaction or we could send a Cmd
+							}
+						}()
+						m.addPeer(pid.String())
+						m.activePeer = pid.String()
+						m.messages, _ = storage.GetMessages(m.activePeer, 50)
+						m.updateView()
+						m.messageIn.SetValue("")
+						return m, nil
+					}
+
+					m.viewport.SetContent(fmt.Sprintf("Invalid address or Peer ID: %s", addrStr))
 					m.messageIn.SetValue("")
 					return m, nil
 				}
