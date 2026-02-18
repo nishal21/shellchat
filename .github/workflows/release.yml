@@ -36,13 +36,13 @@ jobs:
           name: desktop-builds
           path: fyne-cross/dist/*
 
-  build-mobile:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.24'
 
       - name: Install fyne-cross
         run: go install github.com/fyne-io/fyne-cross@latest
@@ -50,17 +50,37 @@ jobs:
       - name: Build Android
         run: fyne-cross android -arch=arm64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-android ./gui
 
-      - name: Build iOS
-        run: fyne-cross ios -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-ios ./gui
-
-      - name: Upload Mobile Artifacts
+      - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-builds
+          name: android-builds
           path: fyne-cross/dist/*
 
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install Fyne CLI
+        run: go install fyne.io/fyne/v2/cmd/fyne@latest
+
+      - name: Build iOS
+        # Note: This produces an un-signed release build by default or requires signing. 
+        # For now, we attempt a build. If signing fails, we might need -release=false or profiles.
+        # Fyne package generates a .app or .ipa in the current directory.
+        run: fyne package -os ios -app-id com.shellchat.app -icon assets/icon.png -name ShellChat ./gui
+
+      - name: Upload iOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: "*.app"
+
   release:
-    needs: [build-desktop, build-mobile]
+    needs: [build-desktop, build-android, build-ios]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -73,4 +93,5 @@ jobs:
         with:
           files: |
             desktop-builds/**/*
-            mobile-builds/**/*
+            android-builds/**/*
+            ios-builds/**/*
