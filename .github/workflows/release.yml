@@ -11,24 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'  
-
-      - name: Install fyne-cross
-        run: go install github.com/fyne-io/fyne-cross@latest
-
       - name: Build Windows
-        run: fyne-cross windows -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-windows ./gui
+        run: GOOS=windows GOARCH=amd64 go build -o shellchat-windows.exe .
 
       - name: Build Linux
-        run: fyne-cross linux -arch=amd64 -app-id=com.shellchat.app -icon=assets/icon.png -output=shellchat-linux ./gui
+        run: GOOS=linux GOARCH=amd64 go build -o shellchat-linux .
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-builds
-          path: fyne-cross/dist/*
+          path: |
+            shellchat-windows.exe
+            shellchat-linux
 
   build-macos:
     runs-on: macos-latest
@@ -38,18 +33,16 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Install Fyne CLI
-        run: go install fyne.io/tools/cmd/fyne@latest
-
       - name: Build macOS (Intel)
-        run: |
-          GOARCH=amd64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Intel ./gui
-          tar czf ShellChat-macOS-Intel.tar.gz ShellChat-Intel.app
+        run: GOOS=darwin GOARCH=amd64 go build -o shellchat-macos-amd64 .
 
       - name: Build macOS (Apple Silicon)
+        run: GOOS=darwin GOARCH=arm64 go build -o shellchat-macos-arm64 .
+
+      - name: Compress macOS Builds
         run: |
-          GOARCH=arm64 fyne package --os darwin --app-id com.shellchat.app --icon assets/icon.png --name ShellChat-Silicon ./gui
-          tar czf ShellChat-macOS-AppleSilicon.tar.gz ShellChat-Silicon.app
+          tar czf shellchat-macos-amd64.tar.gz shellchat-macos-amd64
+          tar czf shellchat-macos-arm64.tar.gz shellchat-macos-arm64
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
