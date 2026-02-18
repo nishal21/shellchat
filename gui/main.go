@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"shellchat/p2p"
@@ -43,6 +44,7 @@ type chatApp struct {
 	status   *widget.Label
 
 	// Data
+	mu         sync.Mutex
 	activePeer string
 	peers      []string
 	messages   []storage.Message
@@ -162,20 +164,34 @@ func (c *chatApp) initP2P() {
 func (c *chatApp) showChatUI() {
 	// Peers List
 	c.peerList = widget.NewList(
-		func() int { return len(c.peers) },
+		func() int {
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			return len(c.peers)
+		},
 		func() fyne.CanvasObject { return widget.NewLabel("peer info") },
 		func(id widget.ListItemID, o fyne.CanvasObject) {
-			o.(*widget.Label).SetText(c.peers[id])
+			c.mu.Lock()
+			val := c.peers[id]
+			c.mu.Unlock()
+			o.(*widget.Label).SetText(val)
 		},
 	)
 	c.peerList.OnSelected = func(id widget.ListItemID) {
-		c.activePeer = c.peers[id]
+		c.mu.Lock()
+		p := c.peers[id]
+		c.mu.Unlock()
+		c.activePeer = p
 		c.refreshMessages()
 	}
 
 	// Message List using List widget for performance
 	c.msgList = widget.NewList(
-		func() int { return len(c.messages) },
+		func() int {
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			return len(c.messages)
+		},
 		func() fyne.CanvasObject {
 			return container.NewVBox(
 				widget.NewLabel("header"),
@@ -183,7 +199,14 @@ func (c *chatApp) showChatUI() {
 			)
 		},
 		func(id widget.ListItemID, o fyne.CanvasObject) {
+			c.mu.Lock()
+			if id >= len(c.messages) {
+				c.mu.Unlock()
+				return
+			}
 			msg := c.messages[id]
+			c.mu.Unlock()
+
 			box := o.(*fyne.Container)
 			header := box.Objects[0].(*widget.Label)
 			body := box.Objects[1].(*widget.Label)
@@ -353,28 +376,34 @@ func (c *chatApp) sendMessage(content string) {
 }
 
 func (c *chatApp) refreshMessages() {
+	if c.host == nil {
+		return
+	}
 	msgs, _ := storage.GetMessages(c.activePeer, 50)
-	c.a.Driver().RunOnUIThread(func() {
-		c.messages = msgs
-		c.msgList.Refresh()
-		if len(c.messages) > 0 {
-			c.msgList.ScrollTo(len(c.messages) - 1)
-		}
-	})
+
+	c.mu.Lock()
+	c.messages = msgs
+	c.mu.Unlock()
+
+	c.msgList.Refresh()
+	if len(msgs) > 0 {
+		c.msgList.ScrollTo(len(msgs) - 1)
+	}
 }
 
 func (c *chatApp) addPeer(p string) {
-	c.a.Driver().RunOnUIThread(func() {
-		found := false
-		for _, pine := range c.peers {
-			if pine == p {
-				found = true
-				break
-			}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	found := false
+	for _, pine := range c.peers {
+		if pine == p {
+			found = true
+			break
 		}
-		if !found {
-			c.peers = append(c.peers, p)
-			c.peerList.Refresh()
-		}
-	})
+	}
+	if !found {
+		c.peers = append(c.peers, p)
+		c.peerList.Refresh()
+	}
 }
