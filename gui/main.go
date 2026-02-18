@@ -79,7 +79,15 @@ func (c *chatApp) showLogin() {
 		key := argon2.IDKey([]byte(passEntry.Text), salt, 1, 64*1024, 4, 32)
 		hexKey := fmt.Sprintf("x'%x'", key)
 
-		if err := storage.InitDB(hexKey); err != nil {
+		// Use Fyne's storage path
+		storageDir := c.a.Storage().RootURI().Path()
+		// If path is empty (some platforms), fallback or handle error
+		if storageDir == "" {
+			dialog.ShowError(fmt.Errorf("failed to determine storage path"), c.w)
+			return
+		}
+
+		if err := storage.InitDB(storageDir, hexKey); err != nil {
 			dialog.ShowError(err, c.w)
 			return
 		}

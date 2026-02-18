@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"syscall"
 
 	"shellchat/storage"
@@ -51,8 +52,14 @@ var initCmd = &cobra.Command{
 		key := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
 		hexKey := fmt.Sprintf("x'%x'", key)
 
+		userConfigDir, err := os.UserConfigDir()
+		if err != nil {
+			fmt.Println("Failed to get user config dir", err)
+			return
+		}
+
 		// Initialize DB with the derived key
-		if err := storage.InitDB(hexKey); err != nil {
+		if err := storage.InitDB(userConfigDir, hexKey); err != nil {
 			fmt.Println("Failed to initialize database:", err)
 			return
 		}

@@ -13,18 +13,12 @@ import (
 var DB *sql.DB
 
 // InitDB initializes the SQLite database.
-func InitDB(password string) error {
+func InitDB(storageDir, password string) error {
 	if password == "" {
 		return fmt.Errorf("password cannot be empty")
 	}
 
-	// Determine the database path
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return fmt.Errorf("failed to get user config directory: %w", err)
-	}
-
-	appDir := filepath.Join(configDir, "shellchat")
+	appDir := filepath.Join(storageDir, "shellchat")
 	if err := os.MkdirAll(appDir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}

@@ -24,7 +24,8 @@ Whether you're on a Linux VPS, a Windows gaming rig, or an Android phone, ShellC
 
 ### 🛡️ Unbreakable Security
 -   **End-to-End Encryption**: All traffic is encrypted using TLS 1.3 / Noise.
--   **At-Rest Encryption**: Your local database is a **SQLCipher** vault, locked with **AES-256**.
+-   **At-Rest Encryption**: Your local database is secured with **Application-Level Encryption** using **XChaCha20-Poly1305**.
+-   **Pure Go**: We use `modernc.org/sqlite` (CGO-free) for maximum cross-platform compatibility without external dependencies.
 -   **Key Derivation**: We use **Argon2id** (the winner of the Password Hashing Competition) to turn your password into a cryptographic key.
 
 ### 🌍 True Serverless P2P
