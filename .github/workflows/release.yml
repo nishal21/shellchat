@@ -85,7 +85,6 @@ jobs:
         run: go install fyne.io/fyne/v2/cmd/fyne@latest
 
       - name: Build iOS
-      - name: Build iOS
         run: fyne package -os ios -appID com.shellchat.app -icon assets/icon.png -name ShellChat ./gui
 
       - name: Upload iOS Artifacts
