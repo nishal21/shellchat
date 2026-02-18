@@ -119,7 +119,7 @@ func (c *chatApp) initP2P() {
 	c.host = h
 
 	// Discovery
-	go p2p.SetupDiscovery(h, "shellchat-global")
+	go p2p.SetupDiscovery(h.P2PHost, h.DHT)
 
 	// Message Listener
 	go func() {
