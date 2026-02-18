@@ -13,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -50,7 +49,7 @@ func MakeHost(port int, randomness io.Reader) (*ChatHost, error) {
 		libp2p.Identity(priv),
 		libp2p.NATPortMap(), // Try to punch through NAT (UPnP)
 		libp2p.EnableNATService(),
-		libp2p.EnableAutoRelay(autorelay.WithStaticRelays([]peer.AddrInfo{})), // Auto relay if behind NAT (needs public relays in prod)
+		libp2p.EnableAutoRelay(), // Auto relay if behind NAT (needs discovered relays)
 	)
 	if err != nil {
 		return nil, err

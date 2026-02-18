@@ -354,23 +354,27 @@ func (c *chatApp) sendMessage(content string) {
 
 func (c *chatApp) refreshMessages() {
 	msgs, _ := storage.GetMessages(c.activePeer, 50)
-	c.messages = msgs
-	c.msgList.Refresh()
-	if len(c.messages) > 0 {
-		c.msgList.ScrollTo(len(c.messages) - 1)
-	}
+	c.a.Driver().RunOnUIThread(func() {
+		c.messages = msgs
+		c.msgList.Refresh()
+		if len(c.messages) > 0 {
+			c.msgList.ScrollTo(len(c.messages) - 1)
+		}
+	})
 }
 
 func (c *chatApp) addPeer(p string) {
-	found := false
-	for _, pine := range c.peers {
-		if pine == p {
-			found = true
-			break
+	c.a.Driver().RunOnUIThread(func() {
+		found := false
+		for _, pine := range c.peers {
+			if pine == p {
+				found = true
+				break
+			}
 		}
-	}
-	if !found {
-		c.peers = append(c.peers, p)
-		c.peerList.Refresh()
-	}
+		if !found {
+			c.peers = append(c.peers, p)
+			c.peerList.Refresh()
+		}
+	})
 }
