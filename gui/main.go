@@ -240,6 +240,45 @@ func (c *chatApp) sendMessage(content string) {
 		return
 	}
 
+	if content == "/help" {
+		helpText := "Available Commands:\n" +
+			"/myid - Copy your Peer ID\n" +
+			"/connect <addr> - Connect to a peer\n" +
+			"/peers - List connected peers\n" +
+			"/clear - Clear chat history\n" +
+			"/exit - Quit application"
+		dialog.ShowInformation("Help", helpText, c.w)
+		return
+	}
+
+	if content == "/clear" {
+		if err := storage.ClearHistory(); err != nil {
+			dialog.ShowError(err, c.w)
+		} else {
+			c.messages = []storage.Message{}
+			c.msgList.Refresh()
+			dialog.ShowInformation("Chat Cleared", "History deleted locally.", c.w)
+		}
+		return
+	}
+
+	if content == "/peers" {
+		var peerList string
+		for _, p := range c.host.P2PHost.Network().Peers() {
+			peerList += p.String() + "\n"
+		}
+		if peerList == "" {
+			peerList = "No peers connected."
+		}
+		dialog.ShowInformation("Connected Peers", peerList, c.w)
+		return
+	}
+
+	if content == "/exit" || content == "/quit" {
+		c.a.Quit()
+		return
+	}
+
 	if strings.HasPrefix(content, "/connect ") {
 		addrStr := strings.TrimPrefix(content, "/connect ")
 		ma, err := multiaddr.NewMultiaddr(addrStr)
@@ -250,7 +289,12 @@ func (c *chatApp) sendMessage(content string) {
 				defer cancel()
 				c.host.P2PHost.Connect(ctx, *pi)
 				c.addPeer(pi.ID.String())
+				dialog.ShowInformation("Connected", "Successfully connected to peer.", c.w)
+			} else {
+				dialog.ShowError(fmt.Errorf("invalid peer info: %v", err), c.w)
 			}
+		} else {
+			dialog.ShowError(fmt.Errorf("invalid multiaddr: %v", err), c.w)
 		}
 		return
 	}
