@@ -17,6 +17,8 @@ require (
 	modernc.org/sqlite v1.46.0
 )
 
+replace github.com/wlynxg/anet => ./pkg/anet
+
 require (
 	fyne.io/systray v1.12.0 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
