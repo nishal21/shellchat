@@ -242,9 +242,13 @@ func (c *chatApp) showChatUI() {
 func (c *chatApp) sendMessage(content string) {
 	// handle commands
 	if content == "/myid" {
-		id := c.host.P2PHost.ID().String()
-		c.w.Clipboard().SetContent(id)
-		dialog.ShowInformation("ID Copied", id, c.w)
+		var addrs []string
+		for _, addr := range c.host.P2PHost.Addrs() {
+			addrs = append(addrs, fmt.Sprintf("%s/p2p/%s", addr, c.host.P2PHost.ID()))
+		}
+		fullAddr := strings.Join(addrs, "\n")
+		c.w.Clipboard().SetContent(fullAddr)
+		dialog.ShowInformation("IDs Copied", fullAddr, c.w)
 		return
 	}
 
@@ -289,21 +293,49 @@ func (c *chatApp) sendMessage(content string) {
 
 	if strings.HasPrefix(content, "/connect ") {
 		addrStr := strings.TrimPrefix(content, "/connect ")
+
+		// 1. Try valid Multiaddr
 		ma, err := multiaddr.NewMultiaddr(addrStr)
 		if err == nil {
 			pi, err := peer.AddrInfoFromP2pAddr(ma)
 			if err == nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
-				c.host.P2PHost.Connect(ctx, *pi)
-				c.addPeer(pi.ID.String())
-				dialog.ShowInformation("Connected", "Successfully connected to peer.", c.w)
-			} else {
-				dialog.ShowError(fmt.Errorf("invalid peer info: %v", err), c.w)
+				if err := c.host.P2PHost.Connect(ctx, *pi); err != nil {
+					dialog.ShowError(fmt.Errorf("connection failed: %v", err), c.w)
+				} else {
+					c.addPeer(pi.ID.String())
+					dialog.ShowInformation("Connected", "Successfully connected via Multiaddr.", c.w)
+				}
+				return
 			}
-		} else {
-			dialog.ShowError(fmt.Errorf("invalid multiaddr: %v", err), c.w)
 		}
+
+		// 2. Try Peer ID (DHT Lookup)
+		pid, err := peer.Decode(addrStr)
+		if err == nil {
+			dialog.ShowInformation("Searching...", "Looking up peer in DHT...", c.w)
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+
+				pi, err := c.host.DHT.FindPeer(ctx, pid)
+				if err != nil {
+					dialog.ShowError(fmt.Errorf("peer not found in DHT: %v", err), c.w)
+					return
+				}
+
+				if err := c.host.P2PHost.Connect(ctx, pi); err != nil {
+					dialog.ShowError(fmt.Errorf("connection failed: %v", err), c.w)
+				} else {
+					c.addPeer(pi.ID.String())
+					dialog.ShowInformation("Connected", "Successfully connected via Peer ID.", c.w)
+				}
+			}()
+			return
+		}
+
+		dialog.ShowError(fmt.Errorf("invalid address or peer ID"), c.w)
 		return
 	}
 
