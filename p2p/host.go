@@ -49,7 +49,7 @@ func MakeHost(port int, randomness io.Reader) (*ChatHost, error) {
 		libp2p.Identity(priv),
 		libp2p.NATPortMap(), // Try to punch through NAT (UPnP)
 		libp2p.EnableNATService(),
-		libp2p.EnableAutoRelay(), // Auto relay if behind NAT (needs discovered relays)
+		libp2p.EnableHolePunching(), // Enable Hole Punching instead of AutoRelay (Panic fix)
 	)
 	if err != nil {
 		return nil, err
